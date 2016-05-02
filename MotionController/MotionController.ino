@@ -7,7 +7,7 @@ DHT dht(DHTPIN, DHTTYPE);
 const int IN_MOTION_PIN = 7;
 const int OUT_RED_PIN = 13;
 const int OUT_YELLOW_PIN = 12;
-const int OUT_GREEN_PIN = 8;
+const int OUT_GREEN_PIN = 11;
 const int IO_TEMP_HUMIDITY_PIN = 4;
 
 ///////////////////////// Delays
