@@ -1,18 +1,16 @@
-#include "DHT.h"
-#define DHTPIN 4
-#define DHTTYPE DHT11
-DHT dht(DHTPIN, DHTTYPE);
+#include <OneWire.h>
+#include <DallasTemperature.h>
 
 ///////////////////////// Pins
-const int IN_MOTION_PIN = 7;
 const int OUT_RED_PIN = 13;
 const int OUT_YELLOW_PIN = 12;
 const int OUT_GREEN_PIN = 11;
-const int IO_TEMP_HUMIDITY_PIN = 4;
+const int IN_MOTION_PIN = 10;
+const int IO_TEMPERATURE_PIN = 9;
 
 ///////////////////////// Delays
 const unsigned long MOTION_DELAY = 4000;
-const unsigned long TEMP_HUMIDITY_DELAY = 15000;
+const unsigned long TEMPERATURE_DELAY = 15000;
 
 ///////////////////////// Motion
 const byte STATE_MOTION_UNDEFINED = 0;
@@ -75,41 +73,25 @@ void detectMotion(unsigned long now) {
 }
 
 ///////////////////////// Temperature and Humidity
-void initializeTemperatureAndHumidity() {
-    pinMode(IO_TEMP_HUMIDITY_PIN, OUTPUT);
+OneWire oneWire(IO_TEMPERATURE_PIN);
+DallasTemperature sensors(&oneWire);
+
+void initializeThermastor() {
+  sensors.begin();
 }
 
-void measureTemperatureAndHumidity(float *temperatureInFarenheit, float *relativeHumidityInPercent) {
-  // Reading temperature or humidity takes about 250 milliseconds!
-  // Sensor readings may also be up to 2 seconds 'old' (its a very slow sensor)
-  float h = dht.readHumidity();
-  // Read temperature as Fahrenheit (isFahrenheit = true)
-  float f = dht.readTemperature(true);
-  
-  // Check if any reads failed and exit early (to try again).
-  if (isnan(h) || isnan(f)) {
-    Serial.println("Failed to read from DHT sensor!");
-    return;
-  }
-  *temperatureInFarenheit = f;
-  *relativeHumidityInPercent = h;
-}
+double lastMeasuredTemperature = 0.0;
+unsigned long nextCheck = TEMPERATURE_DELAY;
 
-float lastMeasuredTemperature = 0.0;
-float lastMeasuredHumidity = 0.0;
-unsigned long nextCheck = TEMP_HUMIDITY_DELAY;
-
-void detectTemperatureAndHumidity(unsigned long now) {
+void detectTemperature(unsigned long now) {
     if (now <= nextCheck)
     {
         return; // Not time to check yet
     }
-    nextCheck = now + TEMP_HUMIDITY_DELAY;
-
-    float degreesFarenheit = 0.0;
-    float percentHumidity = 0.0;
-
-    measureTemperatureAndHumidity(&degreesFarenheit, &percentHumidity);
+    nextCheck = now + TEMPERATURE_DELAY;
+    
+    sensors.requestTemperatures();
+    float degreesFarenheit = sensors.getTempFByIndex(0);
 
     if (lastMeasuredTemperature != degreesFarenheit) {
         Serial.print("Temperature: ");
@@ -117,18 +99,12 @@ void detectTemperatureAndHumidity(unsigned long now) {
         Serial.println("F.");
         lastMeasuredTemperature = degreesFarenheit;
     }
-    if (lastMeasuredHumidity != percentHumidity) {
-        Serial.print("Relative humidity: ");
-        Serial.print(percentHumidity);
-        Serial.println("%.");
-        lastMeasuredHumidity = percentHumidity;
-    }
 }
 
 ///////////////////////// Arduino
 void setup() {
     initializeMotion();
-    initializeTemperatureAndHumidity();
+    initializeThermastor();
 
     Serial.begin(9600);
     Serial.println("Ready");
@@ -138,7 +114,7 @@ void loop() {
     unsigned long now = millis();
 
     detectMotion(now);
-    detectTemperatureAndHumidity(now);
+    detectTemperature(now);
 
     delay(1000);
 }
