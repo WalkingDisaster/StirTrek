@@ -1,4 +1,3 @@
-#include <OneWire.h>
 #include <DallasTemperature.h>
 
 ///////////////////////// Pins
@@ -103,10 +102,11 @@ void detectTemperature(unsigned long now) {
 
 ///////////////////////// Arduino
 void setup() {
+    Serial.begin(9600);
+
     initializeMotion();
     initializeThermastor();
 
-    Serial.begin(9600);
     Serial.println("Ready");
 }
 
@@ -116,5 +116,5 @@ void loop() {
     detectMotion(now);
     detectTemperature(now);
 
-    delay(1000);
+    delay(50);
 }
